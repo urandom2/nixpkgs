@@ -16249,6 +16249,8 @@ with pkgs;
 
   astyle = callPackage ../development/tools/misc/astyle { };
 
+  atlas = callPackage ../development/tools/database/atlas {};
+
   automaticcomponenttoolkit = callPackage ../development/tools/misc/automaticcomponenttoolkit { };
 
   aviator = callPackage ../development/tools/misc/aviator { };
