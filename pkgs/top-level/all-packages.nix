@@ -29039,6 +29039,8 @@ with pkgs;
 
   moe =  callPackage ../applications/editors/moe { };
 
+  monitoror = callPackage ../applications/video/monitoror {};
+
   pattypan = callPackage ../applications/misc/pattypan {};
 
   praat = callPackage ../applications/audio/praat { };
