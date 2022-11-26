@@ -22763,6 +22763,8 @@ with pkgs;
 
   theft = callPackage ../development/libraries/theft { };
 
+  therecipe-qt = callPackage ../development/libraries/therecipe-qt {};
+
   thrift = callPackage ../development/libraries/thrift {
     openssl = openssl_1_1;
   };
