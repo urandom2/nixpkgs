@@ -6626,6 +6626,8 @@ with pkgs;
 
   fgallery = callPackage ../tools/graphics/fgallery { };
 
+  filestash = callPackage ../tools/networking/filestash {};
+
   flannel = callPackage ../tools/networking/flannel { };
   cni-plugin-flannel = callPackage ../tools/networking/flannel/plugin.nix {};
 
