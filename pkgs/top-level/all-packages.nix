@@ -23533,6 +23533,8 @@ with pkgs;
 
   asterisk-module-sccp = callPackage ../servers/asterisk/sccp { };
 
+  authelia = callPackage ../servers/authelia {};
+
   sabnzbd = callPackage ../servers/sabnzbd { };
 
   baserow = callPackage ../servers/baserow { };
