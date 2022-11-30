@@ -1399,6 +1399,8 @@ with pkgs;
 
   kanata-with-cmd = kanata.override { withCmd = true; };
 
+  inherit (callPackage ../tools/security/keys {}) keys-app keys-ext;
+
   ksmbd-tools = callPackage ../os-specific/linux/ksmbd-tools { };
 
   ksnip = libsForQt5.callPackage ../tools/misc/ksnip { };
