@@ -24189,6 +24189,8 @@ with pkgs;
 
   petidomo = callPackage ../servers/mail/petidomo { };
 
+  phlare = callPackage ../servers/phlare {};
+
   pict-rs = callPackage ../servers/web-apps/pict-rs {
     inherit (darwin.apple_sdk.frameworks) Security;
     ffmpeg = ffmpeg_4;
