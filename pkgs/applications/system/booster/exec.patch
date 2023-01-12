@@ -1,0 +1,234 @@
+diff --git a/generator/console.go b/generator/console.go
+index 8b9fe23..a3e5749 100644
+--- a/generator/console.go
++++ b/generator/console.go
+@@ -111,7 +111,7 @@ func loadKeymap(keymap, keymapToggle string, isUtf bool) ([]byte, error) {
+ 		args = append(args, keymapToggle)
+ 	}
+ 
+-	blob, err := exec.Command("loadkeys", args...).Output()
++	blob, err := exec.Command("@loadkeys@", args...).Output()
+ 	err = unwrapExitError(err)
+ 	return blob, err
+ }
+diff --git a/generator/image.go b/generator/image.go
+index f703e88..e74951b 100644
+--- a/generator/image.go
++++ b/generator/image.go
+@@ -141,7 +141,7 @@ func stripElf(in []byte, stripAll bool) ([]byte, error) {
+ 		args = append(args, "--strip-unneeded")
+ 	}
+ 	args = append(args, t.Name())
+-	if err := exec.Command("strip", args...).Run(); err != nil {
++	if err := exec.Command("@strip@", args...).Run(); err != nil {
+ 		return nil, unwrapExitError(err)
+ 	}
+ 
+diff --git a/generator/lz4.go b/generator/lz4.go
+index f1e3be5..95af254 100644
+--- a/generator/lz4.go
++++ b/generator/lz4.go
+@@ -7,7 +7,7 @@ import (
+ // lz4 compressor/decompressor library, wrapper over command-line 'lz4' tool
+ 
+ func newLz4Reader(r io.Reader) (io.ReadCloser, error) {
+-	return newPipeCommandReader(r, "lz4", "-d", "-c", "-")
++	return newPipeCommandReader(r, "@lz4@", "-d", "-c", "-")
+ }
+ 
+ func newLz4Writer(w io.Writer, legacy bool) (io.WriteCloser, error) {
+@@ -17,5 +17,5 @@ func newLz4Writer(w io.Writer, legacy bool) (io.WriteCloser, error) {
+ 	}
+ 	args = append(args, "-")
+ 
+-	return newPipeCommandWriter(w, "lz4", args...)
++	return newPipeCommandWriter(w, "@lz4@", args...)
+ }
+diff --git a/generator/main.go b/generator/main.go
+index c884e5d..8521405 100644
+--- a/generator/main.go
++++ b/generator/main.go
+@@ -17,11 +17,11 @@ var opts struct {
+ 
+ 	BuildCommand struct {
+ 		Force            bool   `short:"f" long:"force" description:"Overwrite existing initrd file"`
+-		InitBinary       string `long:"init-binary" default:"/usr/lib/booster/init" description:"Booster 'init' binary location"`
++		InitBinary       string `long:"init-binary" default:"@out@/bin/init" description:"Booster 'init' binary location"`
+ 		Compression      string `long:"compression" choice:"zstd" choice:"gzip" choice:"xz" choice:"lz4" choice:"none" description:"Output file compression"`
+ 		KernelVersion    string `long:"kernel-version" description:"Linux kernel version to generate initramfs for"`
+-		ModulesDirectory string `long:"modules-dir" description:"Directory with kernel modules, if not set then /usr/lib/modules/$kernel-version is used"`
+-		ConfigFile       string `long:"config" default:"/etc/booster.yaml" description:"Configuration file path"`
++		ModulesDirectory string `long:"modules-dir" description:"Directory with kernel modules, if not set then @modules@/$kernel-version is used"`
++		ConfigFile       string `long:"config" default:"@out@/etc/booster.yaml" description:"Configuration file path"`
+ 		Universal        bool   `long:"universal" description:"Add wide range of modules/tools to allow this image boot at different machines"`
+ 		Strip            bool   `long:"strip" description:"Strip ELF files (binaries, shared libraries and kernel modules) before adding it to the image"`
+ 		Args             struct {
+diff --git a/init/console.go b/init/console.go
+index d9055ba..951fdf1 100644
+--- a/init/console.go
++++ b/init/console.go
+@@ -27,7 +27,7 @@ func consoleSetFont(c *VirtualConsole) error {
+ 	if c.FontUnicodeFile != "" {
+ 		args = append(args, "-u", c.FontUnicodeFile)
+ 	}
+-	err := exec.Command("setfont", args...).Run()
++	err := exec.Command("@setfont@", args...).Run()
+ 	return unwrapExitError(err)
+ }
+ 
+diff --git a/init/luks.go b/init/luks.go
+index a537a30..0b780c8 100644
+--- a/init/luks.go
++++ b/init/luks.go
+@@ -111,7 +111,7 @@ func recoverFido2Password(devName string, credential string, salt string, relyin
+ 		args = append(args, "-t", "pin=true")
+ 	}
+ 
+-	cmd := exec.Command("fido2-assert", args...)
++	cmd := exec.Command("@fido2-assert@", args...)
+ 	pipeOut, err := cmd.StdoutPipe()
+ 	if err != nil {
+ 		return nil, err
+diff --git a/init/main.go b/init/main.go
+index b72229e..b0d46ac 100644
+--- a/init/main.go
++++ b/init/main.go
+@@ -299,7 +299,7 @@ func handleMdraidBlockDevice(blk *blkInfo) error {
+ 		return fmt.Errorf("unknown raid level for device %s", blk.path)
+ 	}
+ 
+-	out, err := exec.Command("mdadm", "--export", "--incremental", blk.path).Output()
++	out, err := exec.Command("@mdadm@", "--export", "--incremental", blk.path).Output()
+ 	if err != nil {
+ 		return unwrapExitError(err)
+ 	}
+@@ -325,7 +325,7 @@ func handleLvmBlockDevice(blk *blkInfo) error {
+ 	}
+ 
+ 	info("scanning lvm physical volume %s", blk.path)
+-	cmd := exec.Command("lvm", "pvscan", "--cache", "-aay", blk.path)
++	cmd := exec.Command("@lvm@", "pvscan", "--cache", "-aay", blk.path)
+ 	if verbosityLevel >= levelDebug {
+ 		cmd.Stdout = os.Stdout
+ 	}
+@@ -346,8 +346,8 @@ func resume(devpath string) error {
+ }
+ 
+ func fsck(dev string) error {
+-	if _, err := os.Stat("/usr/bin/fsck"); !os.IsNotExist(err) {
+-		cmd := exec.Command("/usr/bin/fsck", "-y", dev)
++	if _, err := os.Stat("@fsck@"); !os.IsNotExist(err) {
++		cmd := exec.Command("@fsck@", "-y", dev)
+ 		if verbosityLevel >= levelDebug {
+ 			cmd.Stdout = os.Stdout
+ 		}
+@@ -847,7 +847,7 @@ func mountZfsRoot() error {
+ 
+ 	debug("importing zfs pool %s", pool)
+ 
+-	err = exec.Command("zpool", "import", "-c", "/etc/zfs/zpool.cache", "-N", pool).Run()
++	err = exec.Command("@zpool@", "import", "-c", "/etc/zfs/zpool.cache", "-N", pool).Run()
+ 	if err != nil {
+ 		return unwrapExitError(err)
+ 	}
+@@ -855,7 +855,7 @@ func mountZfsRoot() error {
+ 	// find all child datasets and mount them
+ 	// zfs list -H -o name -t filesystem -r $zfsDataset
+ 	var datasets []byte
+-	datasets, err = exec.Command("zfs", "list", "-H", "-o", "name", "-t", "filesystem", "-r", zfsDataset).Output()
++	datasets, err = exec.Command("@zfs@", "list", "-H", "-o", "name", "-t", "filesystem", "-r", zfsDataset).Output()
+ 	if err != nil {
+ 		return unwrapExitError(err)
+ 	}
+@@ -863,7 +863,7 @@ func mountZfsRoot() error {
+ 	flags, options := mountFlags()
+ 	options = strings.Join([]string{"zfsutil", options}, ",")
+ 	for _, ds := range strings.Split(strings.TrimSpace(string(datasets)), "\n") {
+-		val, err := exec.Command("zfs", "get", "-H", "-o", "value", "mountpoint", ds).Output()
++		val, err := exec.Command("@zfs@", "get", "-H", "-o", "value", "mountpoint", ds).Output()
+ 		if err != nil {
+ 			return unwrapExitError(err)
+ 		}
+diff --git a/tests/usb.go b/tests/usb.go
+index 9f0d4ab..59a2c27 100644
+--- a/tests/usb.go
++++ b/tests/usb.go
+@@ -17,7 +17,7 @@ func (usb usbdev) toQemuParams() []string {
+ 
+ // detectYubikeys checks if yubikeys tokens are present and uses it slot for tests
+ func detectYubikeys() ([]usbdev, error) {
+-	out, err := exec.Command("lsusb").CombinedOutput()
++	out, err := exec.Command("@lsusb@").CombinedOutput()
+ 	if err != nil {
+ 		return nil, unwrapExitError(err)
+ 	}
+diff --git a/tests/util.go b/tests/util.go
+index d8be8cf..f93aead 100644
+--- a/tests/util.go
++++ b/tests/util.go
+@@ -68,7 +68,7 @@ func startSwtpm() (*os.Process, []string, error) {
+ 		return nil, nil, err
+ 	}
+ 
+-	cmd := exec.Command("swtpm", "socket", "--tpmstate", "dir=assets/tpm2", "--tpm2", "--ctrl", "type=unixio,path=assets/swtpm-sock", "--flags", "not-need-init")
++	cmd := exec.Command("@swtpm@", "socket", "--tpmstate", "dir=assets/tpm2", "--tpm2", "--ctrl", "type=unixio,path=assets/swtpm-sock", "--flags", "not-need-init")
+ 	if testing.Verbose() {
+ 		cmd.Stdout = os.Stdout
+ 		cmd.Stderr = os.Stderr
+@@ -131,7 +131,7 @@ func runSSHCommand(t *testing.T, conn *ssh.Client, command string) string {
+ }
+ 
+ func shell(script string, env ...string) error {
+-	sh := exec.Command("bash", "-o", "errexit", script)
++	sh := exec.Command("@bash@", "-o", "errexit", script)
+ 	sh.Env = append(os.Environ(), env...)
+ 
+ 	if testing.Verbose() {
+@@ -196,15 +196,15 @@ func generateInitRamfs(workDir string, opts Opts) (string, error) {
+ 	var verifyCmd *exec.Cmd
+ 	switch opts.compression {
+ 	case "none":
+-		verifyCmd = exec.Command("cpio", "-i", "--only-verify-crc", "--file", output)
++		verifyCmd = exec.Command("@cpio@", "-i", "--only-verify-crc", "--file", output)
+ 	case "zstd", "":
+-		verifyCmd = exec.Command("zstd", "--test", output)
++		verifyCmd = exec.Command("@zstd@", "--test", output)
+ 	case "gzip":
+-		verifyCmd = exec.Command("gzip", "--test", output)
++		verifyCmd = exec.Command("@gzip@", "--test", output)
+ 	case "xz":
+-		verifyCmd = exec.Command("xz", "--test", output)
++		verifyCmd = exec.Command("@xz@", "--test", output)
+ 	case "lz4":
+-		verifyCmd = exec.Command("lz4", "--test", output)
++		verifyCmd = exec.Command("@lz4@", "--test", output)
+ 	default:
+ 		return "", fmt.Errorf("Unknown compression: %s", opts.compression)
+ 	}
+@@ -404,7 +404,7 @@ func compileBinaries(dir string) error {
+ 	_ = os.Mkdir("assets", 0o755)
+ 
+ 	if exists := fileExists("assets/init"); !exists {
+-		if err := exec.Command("gcc", "-static", "-o", "assets/init", "init/init.c").Run(); err != nil {
++		if err := exec.Command("@gcc@", "-static", "-o", "assets/init", "init/init.c").Run(); err != nil {
+ 			return unwrapExitError(err)
+ 		}
+ 	}
+@@ -417,7 +417,7 @@ func compileBinaries(dir string) error {
+ 	if israce.Enabled {
+ 		raceFlag = "-race"
+ 	}
+-	cmd := exec.Command("go", "build", "-o", dir+"/init", "-tags", "test", raceFlag)
++	cmd := exec.Command("@go@", "build", "-o", dir+"/init", "-tags", "test", raceFlag)
+ 	cmd.Env = os.Environ()
+ 	if !israce.Enabled {
+ 		cmd.Env = append(cmd.Env, "CGO_ENABLED=0")
+@@ -435,7 +435,7 @@ func compileBinaries(dir string) error {
+ 	if err := os.Chdir("../generator"); err != nil {
+ 		return err
+ 	}
+-	cmd = exec.Command("go", "build", "-o", dir+"/generator", "-tags", "test", raceFlag)
++	cmd = exec.Command("@go@", "build", "-o", dir+"/generator", "-tags", "test", raceFlag)
+ 	if testing.Verbose() {
+ 		log.Print("Call 'go build' for generator")
+ 		cmd.Stdout = os.Stdout
